@@ -1,6 +1,6 @@
 #include <SDL.h>
 
-int main(){
+int main(int argv, char** args){
     bool quit;
     SDL_Event event;
     // SDL setup

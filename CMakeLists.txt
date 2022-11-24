@@ -5,9 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(SDL2 REQUIRED)
-endif()
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(SDL2_INCLUDE_DIR C:/libs/SDL/include)
     set(SDL2_LIB_DIR C:/libs/SDL/lib/x64)
 endif()
