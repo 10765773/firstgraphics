@@ -1,11 +1,27 @@
 #include <SDL.h>
+#include <vector>
+#include <iostream>
 
-class AbstractCanvas{
+struct Colour{
+    int rval,gval,bval;
+
+    Colour(int r, int g, int b){
+      rval = r;
+      gval = g;
+      bval = b;
+    }
+};
+
+std::ostream& operator<<(std::ostream& os, Colour c){
+  return os << c.rval << ", " << c.gval << ", " << c.bval << "\n";
+}
+
+class Canvas{
 private:
     SDL_Renderer *sdlRenderer;
 
 public:
-    AbstractCanvas(SDL_Renderer *aSdlRenderer) {
+    Canvas(SDL_Renderer *aSdlRenderer) {
         this->sdlRenderer = aSdlRenderer;
     }
 
@@ -30,7 +46,7 @@ int main(int argv, char** args){
                                           0);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
 
-    AbstractCanvas canvas(renderer);
+    Canvas canvas(renderer);
 
     //Main loop
     while(!quit){
