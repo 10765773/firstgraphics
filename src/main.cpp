@@ -83,5 +83,4 @@ int main(int argv, char** args){
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
-
 }
