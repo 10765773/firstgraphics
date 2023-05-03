@@ -15,6 +15,6 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS})
 link_directories(${SDL2_LIB_DIR})
 
-add_executable(${PROJECT_NAME} src/main.cpp src/glad.c src/glad.h)
+add_executable(${PROJECT_NAME} src/main.cpp src/glad.c src/glad.h src/shader.h)
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} SDL2main SDL2)

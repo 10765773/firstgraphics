@@ -2,7 +2,7 @@
 #include <SDL.h>
 #include <cmath>
 #include <iostream>
-#include <cmath>
+#include "shader.h"
 
 SDL_Window *window;
 SDL_GLContext glContext;
@@ -23,23 +23,6 @@ void eventHandle() {
     }
 }
 
-const char *vertexShaderSource = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "layout (location = 1) in vec3 aColor;\n"
-                                 "out vec3 ourColor;\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "    gl_Position = vec4(aPos, 1.0);\n"
-                                 "    ourColor = aColor;\n"
-                                 "}\0";
-
-const char *fragmentShaderSource = "#version 330 core\n"
-                                   "out vec4 FragColor;\n"
-                                   "in vec3 ourColor;\n"
-                                   "void main()\n"
-                                   "{\n"
-                                   "   FragColor = vec4(ourColor, 1.0);\n"
-                                   "}\n\0";
 
 int main(int argv, char **args) {
     sdlQuit = false;
@@ -82,25 +65,6 @@ int main(int argv, char **args) {
     }
     //Set OpenGL viewport size
     glViewport(0, 0, 1080, 720);
-
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-    glCompileShader(vertexShader);
-
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
-
-
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 
 //    float vertices[] = {
 //            0.5f,  0.5f, 0.0f,  // TR
@@ -150,6 +114,7 @@ int main(int argv, char **args) {
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
     std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
+    Shader myShader("../shaders/shader.vs", "../shaders/shader.fs");
     //Main loop
     while (!sdlQuit) {
         SDL_Delay(10);
@@ -160,11 +125,11 @@ int main(int argv, char **args) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
+        myShader.use();
 
         float timeValue = (SDL_GetTicks() / 1000.0);
         float greenValue = std::sin(timeValue) / 2.0f + 0.5f;
-        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        int vertexColorLocation = glGetUniformLocation(myShader.ID, "ourColor");
         glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
         glBindVertexArray(VAO);
