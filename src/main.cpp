@@ -132,6 +132,9 @@ int main(int argv, char** args){
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) nullptr);
     glEnableVertexAttribArray(0);
 
+    int nrAttributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+    std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
     //Main loop
     while(!sdlQuit){
@@ -146,6 +149,7 @@ int main(int argv, char** args){
         glUseProgram(shaderProgram);
 //        glBindVertexArray(VAO);
 //        glDrawArrays(GL_TRIANGLES, 0, 3);
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
 
