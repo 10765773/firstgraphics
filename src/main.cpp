@@ -1,20 +1,22 @@
 #include "glad.h"
 #include <SDL.h>
+#include <cmath>
 #include <iostream>
+#include <cmath>
 
 SDL_Window *window;
 SDL_GLContext glContext;
 SDL_Event event;
 bool sdlQuit;
 
-void eventHandle(){
+void eventHandle() {
     SDL_PollEvent(&event);
-    switch(event.type) {
+    switch (event.type) {
         case SDL_QUIT:
             sdlQuit = true;
             break;
         case SDL_KEYDOWN:
-            switch(event.key.keysym.sym){
+            switch (event.key.keysym.sym) {
                 case SDLK_ESCAPE:
                     sdlQuit = true;
             }
@@ -23,19 +25,23 @@ void eventHandle(){
 
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
+                                 "layout (location = 1) in vec3 aColor;\n"
+                                 "out vec3 ourColor;\n"
                                  "void main()\n"
                                  "{\n"
-                                 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+                                 "    gl_Position = vec4(aPos, 1.0);\n"
+                                 "    ourColor = aColor;\n"
                                  "}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
                                    "out vec4 FragColor;\n"
+                                   "in vec3 ourColor;\n"
                                    "void main()\n"
                                    "{\n"
-                                   "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+                                   "   FragColor = vec4(ourColor, 1.0);\n"
                                    "}\n\0";
 
-int main(int argv, char** args){
+int main(int argv, char **args) {
     sdlQuit = false;
 
     // SDL setup
@@ -45,33 +51,32 @@ int main(int argv, char** args){
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     //Initialise video subsystem
-    if(SDL_Init(SDL_INIT_VIDEO) < 0){
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "SDL could not initialize! SDL_Error:" << SDL_GetError() << std::endl;
         return -1;
     }
 
     //Create SDL window
-    window = SDL_CreateWindow( "First Graphics",
-                               SDL_WINDOWPOS_UNDEFINED,
-                               SDL_WINDOWPOS_UNDEFINED,
-                               1080,
-                               720,
-                               SDL_WINDOW_OPENGL);
-    if(window == nullptr){
+    window = SDL_CreateWindow("First Graphics",
+                              SDL_WINDOWPOS_UNDEFINED,
+                              SDL_WINDOWPOS_UNDEFINED,
+                              1080,
+                              720,
+                              SDL_WINDOW_OPENGL);
+    if (window == nullptr) {
         std::cout << "Window could not be created! SDL_Error:" << SDL_GetError() << std::endl;
         return -1;
     }
 
     //Create OpenGL context
     glContext = SDL_GL_CreateContext(window);
-    if(glContext == nullptr){
+    if (glContext == nullptr) {
         std::cout << "OpenGL context could not be created! SDL_Error:" << SDL_GetError() << std::endl;
         return -1;
     }
 
     //Initialize glad
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-    {
+    if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
@@ -97,15 +102,21 @@ int main(int argv, char** args){
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+//    float vertices[] = {
+//            0.5f,  0.5f, 0.0f,  // TR
+//            0.5f, -0.5f, 0.0f,  // BR
+//            -0.5f, -0.5f, 0.0f,  // BL
+//            -0.5f,  0.5f, 0.0f   // TL
+//    };
+//    unsigned int indices[] = {  //
+//            0, 1, 3,   // first triangle
+//            1, 2, 3    // second triangle
+//    };
     float vertices[] = {
-            0.5f,  0.5f, 0.0f,  // TR
-            0.5f, -0.5f, 0.0f,  // BR
-            -0.5f, -0.5f, 0.0f,  // BL
-            -0.5f,  0.5f, 0.0f   // TL
-    };
-    unsigned int indices[] = {  //
-            0, 1, 3,   // first triangle
-            1, 2, 3    // second triangle
+        // positions         // colors
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,   // bottom left
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f    // top
     };
 
     unsigned int VBO;
@@ -125,19 +136,22 @@ int main(int argv, char** args){
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     //Bind the Element Buffer Object and copy indices into it
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     //Setting the VOA attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (0));
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3* sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     int nrAttributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
     std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
     //Main loop
-    while(!sdlQuit){
+    while (!sdlQuit) {
         SDL_Delay(10);
         //Event handling
         eventHandle();
@@ -147,15 +161,24 @@ int main(int argv, char** args){
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
-//        glBindVertexArray(VAO);
-//        glDrawArrays(GL_TRIANGLES, 0, 3);
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
+
+        float timeValue = (SDL_GetTicks() / 1000.0);
+        float greenValue = std::sin(timeValue) / 2.0f + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+//        glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
 
 
         SDL_GL_SwapWindow(window);
     }
+    uint32_t time = SDL_GetTicks();
+    double timeinsecs = time / 1000.0;
+    std::cout << "Time in ms: " << time << "\nTime in s: " << timeinsecs << std::endl;
 
     //SDL cleanup
     SDL_DestroyWindow(window);
