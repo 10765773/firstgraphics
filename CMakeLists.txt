@@ -3,6 +3,8 @@ project(firstgraphics)
 
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(OpenGL REQUIRED)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(SDL2 REQUIRED)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -13,5 +15,5 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS})
 link_directories(${SDL2_LIB_DIR})
 
-add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} SDL2main SDL2)
+add_executable(${PROJECT_NAME} src/main.cpp src/glad.c src/glad.h)
+target_link_libraries(${PROJECT_NAME} SDL2main SDL2 OpenGL)
