@@ -7,6 +7,23 @@ SDL_GLContext glContext;
 SDL_Event event;
 bool sdlQuit;
 
+void eventHandle(){
+    SDL_PollEvent(&event);
+    switch(event.type) {
+        case SDL_QUIT:
+            sdlQuit = true;
+            break;
+        case SDL_KEYDOWN:
+            switch(event.key.keysym.sym){
+                case SDLK_ESCAPE:
+                    sdlQuit = true;
+            }
+    }
+}
+
+
+
+
 int main(int argv, char** args){
     sdlQuit = false;
 
@@ -47,22 +64,19 @@ int main(int argv, char** args){
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-    //SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
-
+    //Set OpenGL viewport size
     glViewport(0, 0, 1080, 720);
-//    AbstractCanvas canvas(renderer);
 
     //Main loop
     while(!sdlQuit){
         SDL_Delay(10);
         //Event handling
+        eventHandle();
+
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
         SDL_GL_SwapWindow(window);
-        SDL_PollEvent(&event);
-        switch(event.type){
-            case SDL_QUIT:
-                sdlQuit = true;
-                break;
-        }
     }
 
     //SDL cleanup
