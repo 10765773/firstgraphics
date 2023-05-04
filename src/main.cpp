@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iostream>
 #include "shader.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 SDL_Window *window;
 SDL_GLContext glContext;
@@ -66,30 +68,21 @@ int main(int argv, char **args) {
     //Set OpenGL viewport size
     glViewport(0, 0, 1080, 720);
 
-//    float vertices[] = {
-//            0.5f,  0.5f, 0.0f,  // TR
-//            0.5f, -0.5f, 0.0f,  // BR
-//            -0.5f, -0.5f, 0.0f,  // BL
-//            -0.5f,  0.5f, 0.0f   // TL
-//    };
-//    unsigned int indices[] = {  //
-//            0, 1, 3,   // first triangle
-//            1, 2, 3    // second triangle
-//    };
     float vertices[] = {
-        // positions         // colors
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   // bottom right
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,   // bottom left
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f    // top
+        // positions          // colors           // texture coords
+        0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
+    };
+    unsigned int indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
     };
 
-    unsigned int VBO;
+    unsigned int VBO, VAO, EBO;
     glGenBuffers(1, &VBO);
-
-    unsigned int VAO;
     glGenVertexArrays(1, &VAO);
-
-    unsigned int EBO;
     glGenBuffers(1, &EBO);
 
     //Binding the Vertex Array Object
@@ -100,21 +93,43 @@ int main(int argv, char **args) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     //Bind the Element Buffer Object and copy indices into it
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     //Setting the VOA attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (0));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (0));
     glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3* sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (3* sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
-    int nrAttributes;
-    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-    std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
-
+    //Create an object of the shader class
     Shader myShader("../shaders/shader.vs", "../shaders/shader.fs");
+
+    //Texture
+    stbi_set_flip_vertically_on_load(true);
+    int imgWidth, imgHeight, imgNrChannels;
+    unsigned char *data = stbi_load("../img/container.jpg", &imgWidth, &imgHeight, &imgNrChannels, 0);
+    unsigned int texture1, texture2;
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    // generate texture using loaded data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    data = stbi_load("../img/awesomeface.png", &imgWidth, &imgHeight, &imgNrChannels, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    myShader.use();
+    myShader.setInt("texture1",0);
+    myShader.setInt("texture2",1);
+
     //Main loop
     while (!sdlQuit) {
         SDL_Delay(10);
@@ -125,15 +140,13 @@ int main(int argv, char **args) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        myShader.use();
-
-        float timeValue = (SDL_GetTicks() / 1000.0);
-        float greenValue = std::sin(timeValue) / 2.0f + 0.5f;
-        int vertexColorLocation = glGetUniformLocation(myShader.ID, "ourColor");
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
 
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 //        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 //        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 //        glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
