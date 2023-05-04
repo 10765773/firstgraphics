@@ -1,3 +1,8 @@
+// This project is largely based on the work of Joey de Vries and his excellent publication LearnOpenGL,
+// available online at https://learnopengl.com. Credit to him and others, including but not limited to:
+//
+// github.com/nothings and other contributors for their work on the stb_image.h library.
+
 #include "glad.h"
 #include <SDL.h>
 #include <cmath>
@@ -5,6 +10,9 @@
 #include "shader.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 SDL_Window *window;
 SDL_GLContext glContext;
@@ -130,12 +138,19 @@ int main(int argv, char **args) {
     myShader.setInt("texture1",0);
     myShader.setInt("texture2",1);
 
+
     //Main loop
     while (!sdlQuit) {
         SDL_Delay(10);
         //Event handling
         eventHandle();
 
+        glm::mat4 trans = glm::mat4(1.0f);
+        //trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+        trans = glm::rotate(trans, (float)SDL_GetTicks()/1000, glm::vec3(0.0f, 0.0f, 1.0f));
+
+        unsigned int transformLoc = glGetUniformLocation(myShader.ID, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
