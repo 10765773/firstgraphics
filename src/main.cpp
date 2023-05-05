@@ -23,6 +23,17 @@ SDL_GLContext glContext;
 SDL_Event event;
 bool sdlQuit;
 
+//Delta time
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+
+//Camera stuff
+const float cameraSpeed = 0.01f;
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
 void eventHandle() {
     SDL_PollEvent(&event);
     switch (event.type) {
@@ -30,13 +41,19 @@ void eventHandle() {
             sdlQuit = true;
             break;
         case SDL_KEYDOWN:
-            switch (event.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                    sdlQuit = true;
-            }
+            if (event.key.keysym.sym == SDLK_ESCAPE)
+                sdlQuit = true;
+            if (event.key.keysym.sym == SDLK_w)
+                cameraPos += cameraSpeed * deltaTime * cameraFront;
+            if (event.key.keysym.sym == SDLK_s)
+                cameraPos -= cameraSpeed * deltaTime * cameraFront;
+            if (event.key.keysym.sym == SDLK_a)
+                cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
+            if (event.key.keysym.sym == SDLK_d)
+                cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed * deltaTime;
+
     }
 }
-
 
 int main(int argv, char **args) {
     sdlQuit = false;
@@ -172,6 +189,7 @@ int main(int argv, char **args) {
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(data);
 
+
     myShader.use();
     myShader.setInt("texture1",0);
     myShader.setInt("texture2",1);
@@ -179,13 +197,20 @@ int main(int argv, char **args) {
 
     //Main loop
     while (!sdlQuit) {
-        SDL_Delay(10);
+
+        //Calculate delta time
+        float currentFrame = SDL_GetTicks();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         //Event handling
         eventHandle();
 
+        //Clear buffers
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //Bind textures
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
@@ -195,10 +220,10 @@ int main(int argv, char **args) {
 
         //3D Stuff
         glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 view;
         glm::mat4 projection = glm::mat4(1.0f);
         model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         projection = glm::perspective(glm::radians(45.0f), (float) G_SCREEN_HEIGHT / (float) G_SCREEN_HEIGHT, 0.1f,
                                       100.0f);
 
@@ -214,9 +239,8 @@ int main(int argv, char **args) {
 
         myShader.setMat4("projection", projection);
 
-        // render container
+        //Render container
         glBindVertexArray(VAO);
-
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         SDL_GL_SwapWindow(window);
